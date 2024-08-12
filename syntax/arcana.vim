@@ -77,6 +77,10 @@ syn match arcanaPathsMod /|\s*paths\s*/ms=s+1
 			\ contained
 hi def link arcanaPathsMod Conditional
 
+syn match arcanaFilenameMod /|\s*filename\s*/ms=s+1
+			\ contained
+hi def link arcanaFilenameMod Conditional
+
 syn match arcanaMdMod /|\s*md\s*/ms=s+1
 			\ contained
 hi def link arcanaMdMod Conditional
@@ -173,7 +177,7 @@ hi def link arcanaIncludeFileTag Macro
 
 syn region arcanaIncludeContentTag start='\(\\\)\@<!\${' end='\(\\\)\@<!}'
 			\ contains=arcanaAlias,arcanaIllegalRootAlias,arcanaUpperMod,arcanaReplaceMod,arcanaReplaceString,arcanaLowerMod,
-			\arcanaPathMod,arcanaTrimMod,arcanaNullableOperator,arcanaSplitMod,arcanaSplitNum
+			\arcanaPathMod,arcanaTrimMod,arcanaNullableOperator,arcanaSplitMod,arcanaSplitNum,arcanaFilenameMod
 hi def link arcanaIncludeContentTag Macro
 
 syn region arcanaSourceTag start='\(\\\)\@<!\.{' end='\(\\\)\@<!}'
