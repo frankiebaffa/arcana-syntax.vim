@@ -8,202 +8,696 @@ endif
 
 let b:current_syntax = "arcana"
 
-syn match arcanaPath '".\{-}"' contained
-hi def link arcanaPath String
+" DEFAULT GROUPS
 
-syn match arcanaIllegalPath '".\{-}"' contained
-hi def link arcanaIllegalPath SpellBad
+highlight default link ArcanaTag Macro
+highlight default link ArcanaKeyword Constant
+highlight default link ArcanaIllegal SpellBad
+highlight default link ArcanaCondition Conditional
 
-syn match arcanaUnmatchedStartblock '\(\\\)\@<!{'
-hi def link arcanaUnmatchedStartblock SpellBad
+" REGION: Ignore
 
-syn match arcanaUnmatchedEndblock '\(\\\)\@<!}'
-hi def link arcanaUnmatchedEndblock SpellBad
+syntax region ArcanaIgnore start=/!{/ end=/}!/
+highlight default link ArcanaIgnore Constant
 
-syn match arcanaLoopContext /\$loop/
-			\ contained
-hi def link arcanaLoopContext Statement
+" REGION: Comment
 
-syn match arcanaContentContext /\$content/
-			\ contained
-hi def link arcanaContentContext Statement
+syntax region ArcanaComment start=/#{/ end=/}#/ keepend
+highlight default link ArcanaComment Comment
 
-syn match arcanaAlias '[a-zA-Z0-9_\-\.$]\+\({\)\@!'
-			\ contained
-			\ contains=arcanaLoopContext,arcanaContentContext,arcanaIllegalRootAlias
-hi def link arcanaAlias Type
+" REGION: Block
 
-syn match arcanaIllegalRootAlias /\$root/ contained
-hi def link arcanaIllegalRootAlias SpellBad
+syntax cluster ArcanaBlockMembers contains=ArcanaIgnore
+syntax cluster ArcanaBlockMembers add=ArcanaComment
+syntax cluster ArcanaBlockMembers add=ArcanaExtendsTag
+syntax cluster ArcanaBlockMembers add=ArcanaIfTag
+syntax cluster ArcanaBlockMembers add=ArcanaSourceTag
+syntax cluster ArcanaBlockMembers add=ArcanaIncludeFileTag
+syntax cluster ArcanaBlockMembers add=ArcanaForEachFileTag
+syntax cluster ArcanaBlockMembers add=ArcanaForEachItemTag
+syntax cluster ArcanaBlockMembers add=ArcanaIncludeContentTag
+syntax cluster ArcanaBlockMembers add=ArcanaUnsetItemTag
+syntax cluster ArcanaBlockMembers add=ArcanaSetItemTag
 
-syn match arcanaRootAlias /\$root/
-			\ contained
-hi def link arcanaRootAlias Statement
+syntax cluster ArcanaNextBlockMembers contains=ArcanaBlock
+syntax cluster ArcanaNextBlockMembers add=ArcanaChain
 
-syn keyword arcanaInKeyword in
-			\ contained
-hi def link arcanaInKeyword Statement
+syntax region ArcanaBlock matchgroup=ArcanaTag start=/\%(\\\)\@<!(/ end=/\%(\\\)\@<!)/
+			\ contained nextgroup=@ArcanaNextBlockMembers contains=@ArcanaBlockMembers
 
-syn keyword arcanaExistsKeyword exists
-			\ contained
-hi def link arcanaExistsKeyword Statement
+" ILLEGAL: Anything in chain before {
 
-syn keyword arcanaEmptyKeyword empty
-			\ contained
-hi def link arcanaEmptyKeyword Statement
+syntax match ArcanaIllegalInChain /[^{\s\t-]/ contained
+highlight default link ArcanaIllegalInChain ArcanaIllegal
 
-syn match arcanaNotCondition '!'
-			\ contained
-hi def link arcanaNotCondition Character
+" REGION: Chain
 
-syn match arcanaNullableOperator '?'
-			\ contained
-hi def link arcanaNullableOperator Character
+syntax region ArcanaChain start=/-/ end=/(/me=e-1 contained nextgroup=ArcanaBlock contains=ArcanaIllegalInChain
+highlight default link ArcanaChain ArcanaTag
 
-syn match arcanaTrimMod /|\s*trim\s*/ms=s+1
-			\ contained
-hi def link arcanaTrimMod Conditional
+" TYPE: Alias
 
-syn match arcanaExtensionMod /|\s*ext\s*/ms=s+1
-			\ contained
-			\ nextgroup=arcanaPath
-hi def link arcanaExtensionMod Conditional
+" The negative lookahead is required to not match the 'source-file' tag '.{'
+let aliasPat = '[a-zA-Z0-9.\-_]\+\%({\)\@!'
 
-syn match arcanaReverseMod /|\s*reverse\s*/ms=s+1
-			\ contained
-hi def link arcanaReverseMod Conditional
+execute 'syntax match ArcanaAlias /' . aliasPat . '/ keepend contained'
+highlight default link ArcanaAlias Type
 
-syn match arcanaPathsMod /|\s*paths\s*/ms=s+1
-			\ contained
-hi def link arcanaPathsMod Conditional
+" KEYWORD: Content
 
-syn match arcanaFilenameMod /|\s*filename\s*/ms=s+1
-			\ contained
-hi def link arcanaFilenameMod Conditional
+let contentKeywordPat = '$content'
 
-syn match arcanaMdMod /|\s*md\s*/ms=s+1
-			\ contained
-hi def link arcanaMdMod Conditional
+execute 'syntax match ArcanaContentKeyword /' . contentKeywordPat . '/ contained'
+highlight default link ArcanaContentKeyword ArcanaKeyword
 
-syn match arcanaRawMod /|\s*raw\s*/ms=s+1
-			\ contained
-hi def link arcanaRawMod Conditional
+" KEYWORD: Loop
 
-syn match arcanaSealedMod /|\s*sealed\s*/ms=s+1
-			\ contained
-hi def link arcanaSealedMod Conditional
+" IMPORTANT: The \%(...\) grouping excludes the result from the captured groups,
+" allowing for more than 10.
+let loopWithPropertyKeywordPat = '$loop\.\%(index\|position\|length\|max\|first\|last\)'
+let loopNoPropertyKeywordPat = '$loop'
+let loopKeywordPat = '\%(' . loopWithPropertyKeywordPat . '\|' . loopNoPropertyKeywordPat . '\)'
 
-syn match arcanaAsMod /|\s*as\s*/ms=s+1
-			\ contained
-hi def link arcanaAsMod Conditional
+execute 'syntax match ArcanaLoopKeyword /' . loopKeywordPat . '/ contained'
+highlight default link ArcanaLoopKeyword ArcanaKeyword
 
-syn match arcanaReplaceMod /|\s*replace\s*/ms=s+1
-			\ nextgroup=arcanaReplaceString
-			\ contained
-hi def link arcanaReplaceMod Conditional
+let aliasLikePat = '\%(' .
+			\ aliasPat . '\|' .
+			\ contentKeywordPat . '\|' .
+			\ loopKeywordPat .
+			\ '\)'
 
-syn match arcanaReplaceString /\s*".\{-}"\s*/
-			\ nextgroup=arcanaReplaceString
-			\ contained
-hi def link arcanaReplaceString String
+syntax cluster ArcanaAliasLikeMembers contains=ArcanaAlias
+syntax cluster ArcanaAliasLikeMembers add=ArcanaContentKeyword
+syntax cluster ArcanaAliasLikeMembers add=ArcanaLoopKeyword
 
-syn match arcanaUpperMod /|\s*upper\s*/ms=s+1
-			\ contained
-hi def link arcanaUpperMod Conditional
+" TYPE: Path
 
-syn match arcanaSplitMod /|\s*split\s*/ms=s+1
-			\ contained
-			\ nextgroup=arcanaSplitNum
-hi def link arcanaSplitMod Conditional
+let pathPat = '"[^"]\{-}"'
 
-syn match arcanaSplitNum /\s*[0-9]\+\s*/
-			\ contained
-			\ nextgroup=arcanaSplitNum
-hi def link arcanaSplitNum Constant
+execute 'syntax match ArcanaPath /' . pathPat . '/ keepend contained'
+highlight default link ArcanaPath String
 
-syn match arcanaLowerMod /|\s*lower\s*/ms=s+1
-			\ contained
-hi def link arcanaLowerMod Conditional
+" TYPE: Alias-Like
 
-syn match arcanaPathMod /|\s*path\s*/ms=s+1
-			\ contained
-hi def link arcanaPathMod Conditional
+let pathLikePat = '\%(' .
+			\ pathPat . '\|' .
+			\ aliasPat . '\|' .
+			\ contentKeywordPat . '\|' .
+			\ loopKeywordPat .
+			\ '\)'
 
-syn match arcanaArrayMod /|\s*array\s*/ms=s+1
-			\ contained
-hi def link arcanaArrayMod Conditional
+syntax cluster ArcanaPathLikeMembers contains=ArcanaAlias
+syntax cluster ArcanaPathLikeMembers add=ArcanaContentKeyword
+syntax cluster ArcanaPathLikeMembers add=ArcanaLoopKeyword
+syntax cluster ArcanaPathLikeMembers add=ArcanaPath
 
-syn match arcanaPopMod /|\s*pop\s*/ms=s+1
-			\ contained
-hi def link arcanaPopMod Conditional
+" CONDITION: And
 
-syn region arcanaBlock start='\(\\\)\@<!{' end='\(\\\)\@<!}'
-			\ contains=arcanaIgnoreTag,arcanaCommentTag,arcanaSourceTag,arcanaIfTag,
-				\arcanaForFileTag,arcanaForItemTag,arcanaIncludeContentTag,arcanaIncludeFileTag,
-				\arcanaSetItemTag,arcanaUnsetItemTag
-			\ nextgroup=arcanaChain,arcanaBlock
-			\ contained
-			\ fold
-hi def link arcanaBlock Text
+let andConditionPat = '&&'
 
-syn match arcanaIllegalInChain /[^{\-]\|\(\(\\\)\@<!}\)\@<!-/ contained
-hi def link arcanaIllegalInChain SpellBad
+execute 'syntax match ArcanaAndCondition /' . andConditionPat . '/ contained'
+highlight default link ArcanaAndCondition ArcanaTag
 
-syn region arcanaChain start=/-/ end=/{/me=s-1
-			\ contained
-			\ contains=arcanaIllegalInChain
-			\ nextgroup=arcanaBlock
-hi def link arcanaChain Macro
+" CONDITION: Or
 
-syn region arcanaIgnoreTag start='\(\\\)\@<!\!{' end='\(\\\)\@<!}\!'
-hi def link arcanaIgnoreTag Constant
+let orConditionPat = '||'
 
-syn region arcanaSiphonTag start='\(\\\)\@<!<{' end='\(\\\)\@<!}'
-			\ contains=arcanaAlias,arcanaIllegalRootAlias,arcanaIllegalPath
-			\ contained
-hi def link arcanaSiphonTag Macro
+execute 'syntax match ArcanaOrCondition /' . orConditionPat . '/ contained'
+highlight default link ArcanaOrCondition ArcanaTag
 
-syn region arcanaExtendTag start='\(\\\)\@<!+{' end='\(\\\)\@<!}'
-			\ contains=arcanaPath,arcanaAlias,arcanaIllegalRootAlias
-hi def link arcanaExtendTag Macro
+" CONDITION: Not
 
-syn region arcanaCommentTag start='\(\\\)\@<!#{' end='\(\\\)\@<!}#'
-hi def link arcanaCommentTag Comment
+let notConditionPat = '!'
 
-syn region arcanaIncludeFileTag start='\(\\\)\@<!&{' end='\(\\\)\@<!}'
-			\ contains=arcanaPath,arcanaAlias,arcanaIllegalRootAlias,arcanaSealedMod,arcanaMdMod,arcanaRawMod
-			\ nextgroup=arcanaBlock,arcanaChain
-hi def link arcanaIncludeFileTag Macro
+execute 'syntax match ArcanaNotCondition /' . notConditionPat . '/ contained'
+highlight default link ArcanaNotCondition ArcanaCondition
 
-syn region arcanaIncludeContentTag start='\(\\\)\@<!\${' end='\(\\\)\@<!}'
-			\ contains=arcanaAlias,arcanaIllegalRootAlias,arcanaUpperMod,arcanaReplaceMod,arcanaReplaceString,arcanaLowerMod,
-			\arcanaPathMod,arcanaTrimMod,arcanaNullableOperator,arcanaSplitMod,arcanaSplitNum,arcanaFilenameMod
-hi def link arcanaIncludeContentTag Macro
+" CONDITION: Empty
 
-syn region arcanaSourceTag start='\(\\\)\@<!\.{' end='\(\\\)\@<!}'
-			\ contains=arcanaPath,arcanaAlias,arcanaIllegalRootAlias,arcanaAsMod
-hi def link arcanaSourceTag Macro
+let emptyConditionPat = 'empty'
 
-syn region arcanaIfTag start='\(\\\)\@<!%{' end='\(\\\)\@<!}'
-			\ contains=arcanaNotCondition,arcanaExistsKeyword,arcanaEmptyKeyword,arcanaAlias,arcanaIllegalRootAlias,arcanaIllegalPath
-			\ nextgroup=arcanaBlock,arcanaChain
-hi def link arcanaIfTag Macro
+execute 'syntax match ArcanaEmptyCondition /' . emptyConditionPat . '/ contained'
+highlight default link ArcanaEmptyCondition ArcanaCondition
 
-syn region arcanaForItemTag start='\(\\\)\@<!@{' end='\(\\\)\@<!}'
-			\ contains=arcanaAlias,arcanaIllegalRootAlias,arcanaInKeyword,arcanaPathsMod,arcanaReverseMod,arcanaNullableOperator,arcanaIllegalPath
-			\ nextgroup=arcanaBlock,arcanaChain
-hi def link arcanaForItemTag Macro
+" CONDITION: Exists
 
-syn region arcanaForFileTag start='\(\\\)\@<!\*{' end='\(\\\)\@<!}'
-			\ contains=arcanaAlias,arcanaIllegalRootAlias,arcanaInKeyword,arcanaPath,arcanaReverseMod,arcanaExtensionMod
-			\ nextgroup=arcanaBlock,arcanaChain
-hi def link arcanaForFileTag Macro
+let existsConditionPat = 'exists'
 
-syn region arcanaSetItemTag start='\(\\\)\@<!={' end='\(\\\)\@<!}'
-			\ contains=arcanaAlias,arcanaRootAlias,arcanaPathMod,arcanaArrayMod,arcanaIllegalPath
-			\ nextgroup=arcanaBlock,arcanaChain,arcanaSiphonTag
-hi def link arcanaSetItemTag Macro
+execute 'syntax match ArcanaExistsCondition /' . existsConditionPat . '/ contained'
+highlight default link ArcanaExistsCondition ArcanaCondition
 
-syn region arcanaUnsetItemTag start='\(\\\)\@<!/{' end='\(\\\)\@<!}'
-			\ contains=arcanaAlias,arcanaIllegalRootAlias,arcanaPopMod,arcanaIllegalPath
-hi def link arcanaUnsetItemTag Macro
+" CONDITION: Eq
+
+let eqConditionPat = '=='
+
+execute 'syntax match ArcanaEqCondition /' . eqConditionPat . '/ contained'
+highlight default link ArcanaEqCondition ArcanaCondition
+
+" CONDITION: Ne
+
+let neConditionPat = '!='
+
+execute 'syntax match ArcanaNeCondition /' . neConditionPat . '/ contained'
+highlight default link ArcanaNeCondition ArcanaCondition
+
+" CONDITION: Gt
+
+let gtConditionPat = '>'
+
+execute 'syntax match ArcanaGtCondition /' . gtConditionPat . '/ contained'
+highlight default link ArcanaGtCondition ArcanaCondition
+
+" CONDITION: Ge
+
+let geConditionPat = '>='
+
+execute 'syntax match ArcanaGeCondition /' . geConditionPat . '/ contained'
+highlight default link ArcanaGeCondition ArcanaCondition
+
+" CONDITION: Lt
+
+let ltConditionPat = '<'
+
+execute 'syntax match ArcanaLtCondition /' . ltConditionPat . '/ contained'
+highlight default link ArcanaLtCondition ArcanaCondition
+
+" CONDITION: Le
+
+let leConditionPat = '<='
+
+execute 'syntax match ArcanaLeCondition /' . leConditionPat . '/ contained'
+highlight default link ArcanaLeCondition ArcanaCondition
+
+let tagEscapePat = '\%(\\\)\@<!'
+let tagStartPat = '{\s*'
+let tagEndPat = '\s*}'
+
+" TAG: Extends
+
+let extendsTagPat = tagEscapePat . '+' . tagStartPat .
+			\ '\%(' .
+				\ pathLikePat . '\|' .
+				\ pathPat .
+			\ '\)' . tagEndPat
+
+execute 'syntax match ArcanaExtendsTag /' . extendsTagPat . '/ contains=@ArcanaPathLikeMembers'
+highlight default link ArcanaExtendsTag ArcanaTag
+
+" TAG: If
+
+syntax cluster ArcanaIfTagMembers contains=@ArcanaAliasLikeMembers
+syntax cluster ArcanaIfTagMembers add=ArcanaAndCondition
+syntax cluster ArcanaIfTagMembers add=ArcanaOrCondition
+syntax cluster ArcanaIfTagMembers add=ArcanaNotCondition
+syntax cluster ArcanaIfTagMembers add=ArcanaEmptyCondition
+syntax cluster ArcanaIfTagMembers add=ArcanaExistsCondition
+syntax cluster ArcanaIfTagMembers add=ArcanaEqCondition
+syntax cluster ArcanaIfTagMembers add=ArcanaNeCondition
+syntax cluster ArcanaIfTagMembers add=ArcanaGtCondition
+syntax cluster ArcanaIfTagMembers add=ArcanaGeCondition
+syntax cluster ArcanaIfTagMembers add=ArcanaLtCondition
+syntax cluster ArcanaIfTagMembers add=ArcanaLeCondition
+
+let ifTagTruthyContentPat = '!\{0,1\}\s*' . aliasLikePat
+
+let ifTagConditionalContentPat = '!\{0,1\}\s*' .
+			\ aliasLikePat .
+			\ '\s*' .
+			\ '\%(' .
+				\ emptyConditionPat . '\|' .
+				\ existsConditionPat . '\|' .
+				\ eqConditionPat . '\s*' . aliasLikePat . '\|' .
+				\ neConditionPat . '\s*' . aliasLikePat . '\|' .
+				\ gtConditionPat . '\s*' . aliasLikePat . '\|' .
+				\ geConditionPat . '\s*' . aliasLikePat . '\|' .
+				\ ltConditionPat . '\s*' . aliasLikePat . '\|' .
+				\ leConditionPat . '\s*' . aliasLikePat .
+			\ '\)'
+
+let ifTagSinglePat = '\%(' . ifTagConditionalContentPat . '\|' . ifTagTruthyContentPat . '\)'
+
+let ifTagMultiPat = ifTagSinglePat . '\s*' .
+			\ '\%(' .
+				\ '\%(' .
+					\ andConditionPat . '\|' .
+					\ orConditionPat .
+				\ '\)\s*' .
+				\ ifTagSinglePat .
+			\ '\)*'
+
+let ifTagPat = tagEscapePat . '%' . tagStartPat . ifTagMultiPat . tagEndPat
+
+execute 'syntax match ArcanaIfTag /' . ifTagPat . '/ contains=@ArcanaIfTagMembers nextgroup=@ArcanaNextBlockMembers'
+highlight default link ArcanaIfTag ArcanaTag
+
+" TYPE: Modifier
+
+let modPat = '\s*|\s*'
+
+execute 'syntax match ArcanaModifier /' . modPat . '/ contained'
+highlight default link ArcanaModifier ArcanaCondition
+
+" KEYWORD: As
+
+let asKeywordPat = 'as'
+
+execute 'syntax match ArcanaAsKeyword /' . asKeywordPat . '/ contained'
+highlight default link ArcanaAsKeyword ArcanaKeyword
+
+" MODIFIER: As
+
+syntax cluster ArcanaAsModifierMembers contains=ArcanaAlias
+syntax cluster ArcanaAsModifierMembers add=ArcanaModifier
+syntax cluster ArcanaAsModifierMembers add=ArcanaAsKeyword
+
+let asModPat = modPat . asKeywordPat . '\s*' . aliasPat
+
+execute 'syntax match ArcanaAsModifier /' . asModPat . '/ contained contains=@ArcanaAsModifierMembers'
+
+" TAG: Source
+
+syntax cluster ArcanaSourceTagMembers contains=@ArcanaPathLikeMembers
+syntax cluster ArcanaSourceTagMembers add=ArcanaAsModifier
+
+let sourceTagPat = tagEscapePat . '\.' . tagStartPat .
+			\ pathLikePat .
+			\ '\%(' . asModPat . '\)\{0,1\}' .
+			\ tagEndPat
+
+execute 'syntax match ArcanaSourceTag /' . sourceTagPat . '/ contains=@ArcanaSourceTagMembers'
+highlight default link ArcanaSourceTag ArcanaTag
+
+" KEYWORD: Raw
+
+let rawKeywordPat = 'raw'
+
+execute 'syntax match ArcanaRawKeyword /' . rawKeywordPat . '/ contained'
+highlight default link ArcanaRawKeyword ArcanaKeyword
+
+" MODIFIER: Raw
+
+syntax cluster ArcanaRawModifierMembers contains=ArcanaModifier
+syntax cluster ArcanaRawModifierMembers add=ArcanaRawKeyword
+
+let rawModPat = modPat . rawKeywordPat
+
+execute 'syntax match ArcanaRawModifier /' . rawModPat . '/ contained contains=@ArcanaRawModifierMembers'
+
+" KEYWORD: Md
+
+let mdKeywordPat = 'md'
+
+execute 'syntax match ArcanaMdKeyword /' . mdKeywordPat . '/ contained'
+highlight default link ArcanaMdKeyword ArcanaKeyword
+
+" MODIFIER: Md
+
+syntax cluster ArcanaMdModifierMembers contains=ArcanaModifier
+syntax cluster ArcanaMdModifierMembers add=ArcanaMdKeyword
+
+let mdModPat = modPat . mdKeywordPat
+
+execute 'syntax match ArcanaMdModifier /' . mdModPat . '/ contained contains=@ArcanaMdModifierMembers'
+
+" TAG: Include-File
+
+syntax cluster ArcanaIncludeFileTagMembers contains=@ArcanaPathLikeMembers
+syntax cluster ArcanaIncludeFileTagMembers add=ArcanaRawModifier
+syntax cluster ArcanaIncludeFileTagMembers add=ArcanaMdModifier
+
+let includeFileTagPat = tagEscapePat . '&' . tagStartPat .
+			\ pathLikePat .
+			\ '\%(' . rawModPat . '\|' . mdModPat . '\)\{0,1\}' .
+			\ '\%(' . rawModPat . '\|' . mdModPat . '\)\{0,1\}' .
+			\ tagEndPat
+
+execute 'syntax match ArcanaIncludeFileTag /' . includeFileTagPat . '/ ' .
+			\ 'contains=@ArcanaIncludeFileTagMembers ' .
+			\ 'nextgroup=@ArcanaNextBlockMembers'
+highlight default link ArcanaIncludeFileTag ArcanaTag
+
+" KEYWORD: Ext
+
+let extKeywordPat = 'ext'
+
+execute 'syntax match ArcanaExtKeyword /' . extKeywordPat . '/ contained'
+highlight default link ArcanaExtKeyword ArcanaKeyword
+
+" MODIFIER: Ext
+
+syntax cluster ArcanaExtModifierMembers contains=ArcanaPath
+syntax cluster ArcanaExtModifierMembers add=ArcanaModifier
+syntax cluster ArcanaExtModifierMembers add=ArcanaExtKeyword
+
+let extModPat = modPat . extKeywordPat . '\s*' . pathPat
+
+execute 'syntax match ArcanaExtModifier /' . extModPat . '/ contained contains=@ArcanaExtModifierMembers'
+
+" KEYWORD: Reverse
+
+let reverseKeywordPat = 'reverse'
+
+execute 'syntax match ArcanaReverseKeyword /' . reverseKeywordPat . '/ contained'
+highlight default link ArcanaReverseKeyword ArcanaKeyword
+
+" MODIFIER: Reverse
+
+syntax cluster ArcanaReverseModifierMembers contains=ArcanaModifier
+syntax cluster ArcanaReverseModifierMembers add=ArcanaReverseKeyword
+
+let reverseModPat = modPat . reverseKeywordPat
+
+execute 'syntax match ArcanaReverseModifier /' . reverseModPat . '/ contained contains=@ArcanaReverseModifierMembers'
+
+" KEYWORD: In
+
+let inKeywordPat = "in"
+
+execute 'syntax match ArcanaInKeyword /' . inKeywordPat . '/ contained'
+highlight default link ArcanaInKeyword ArcanaKeyword
+
+" Type: In Statement
+
+let inStatementStartPat = aliasPat . '\s\+' . inKeywordPat . '\s\+'
+
+execute 'syntax match ArcanaInStatement /' . inStatementStartPat . '/ contained contains=ArcanaInKeyword,ArcanaAlias'
+
+" TAG: For-Each File
+
+let forEachFileTagModsPat = '\%(' . extModPat . '\|' . reverseModPat . '\)\{0,1\}'
+
+let forEachFileTagPat = tagEscapePat . '\*' . tagStartPat .
+			\ inStatementStartPat . pathLikePat .
+			\ forEachFileTagModsPat .
+			\ forEachFileTagModsPat .
+			\ tagEndPat
+
+execute 'syntax match ArcanaForEachFileTag /' . forEachFileTagPat . '/ '
+			\ 'contains=ArcanaInStatement,@ArcanaPathLikeMembers,ArcanaExtModifier,ArcanaReverseModifier ' .
+			\ 'nextgroup=@ArcanaNextBlockMembers'
+highlight default link ArcanaForEachFileTag ArcanaTag
+
+" KEYWORD: Paths
+
+let pathsKeywordPat = 'paths'
+
+execute 'syntax match ArcanaPathsKeyword /' . pathsKeywordPat . '/ contained'
+highlight default link ArcanaPathsKeyword ArcanaKeyword
+
+" MODIFIER: Paths
+
+syntax cluster ArcanaPathsModifierMembers contains=ArcanaModifier
+syntax cluster ArcanaPathsModifierMembers add=ArcanaPathsKeyword
+
+let pathsModPat = modPat . pathsKeywordPat
+
+execute 'syntax match ArcanaPathsModifier /' . pathsModPat . '/ contained contains=@ArcanaPathsModifierMembers'
+
+" CONDITION: Nullable
+
+let nullableConditionPat = '?'
+
+execute 'syntax match ArcanaNullableCondition /' . nullableConditionPat . '/ contained'
+highlight default link ArcanaNullableCondition ArcanaCondition
+
+" TAG: For-Each Item
+
+let forEachItemTagModsPat = '\%(' . pathsModPat . '\|' . reverseModPat . '\)\{0,1\}'
+
+let forEachItemTagPat = tagEscapePat . '@' . tagStartPat .
+			\ inStatementStartPat . aliasPat . nullableConditionPat . '\{0,1}' .
+			\ forEachItemTagModsPat .
+			\ forEachItemTagModsPat .
+			\ tagEndPat
+
+execute 'syntax match ArcanaForEachItemTag /' . forEachItemTagPat . '/ '
+			\ 'contains=ArcanaInStatement,ArcanaAlias,ArcanaNullableCondition,ArcanaPathsModifier,ArcanaReverseModifier ' .
+			\ 'nextgroup=@ArcanaNextBlockMembers'
+highlight default link ArcanaForEachItemTag ArcanaTag
+
+" KEYWORD: Lower
+
+let lowerKeywordPat = 'lower'
+
+execute 'syntax match ArcanaLowerKeyword /' . lowerKeywordPat . '/ contained'
+highlight default link ArcanaLowerKeyword ArcanaKeyword
+
+" MODIFIER: Lower
+
+syntax cluster ArcanaLowerModifierMembers contains=ArcanaModifier
+syntax cluster ArcanaLowerModifierMembers add=ArcanaLowerKeyword
+
+let lowerModPat = modPat . lowerKeywordPat
+
+execute 'syntax match ArcanaLowerModifier /' . lowerModPat . '/ contained contains=@ArcanaLowerModifierMembers'
+
+" KEYWORD: Upper
+
+let upperKeywordPat = 'upper'
+
+execute 'syntax match ArcanaUpperKeyword /' . upperKeywordPat . '/ contained'
+highlight default link ArcanaUpperKeyword ArcanaKeyword
+
+" MODIFIER: Upper
+
+syntax cluster ArcanaUpperModifierMembers contains=ArcanaModifier
+syntax cluster ArcanaUpperModifierMembers add=ArcanaUpperKeyword
+
+let upperModPat = modPat . upperKeywordPat
+
+execute 'syntax match ArcanaUpperModifier /' . upperModPat . '/ contained contains=@ArcanaUpperModifierMembers'
+
+" KEYWORD: Path
+
+let pathKeywordPat = 'path'
+
+execute 'syntax match ArcanaPathKeyword /' . pathKeywordPat . '/ contained'
+highlight default link ArcanaPathKeyword ArcanaKeyword
+
+" MODIFIER: Path
+
+syntax cluster ArcanaPathModifierMembers contains=ArcanaModifier
+syntax cluster ArcanaPathModifierMembers add=ArcanaPathKeyword
+
+let pathModPat = modPat . pathKeywordPat
+
+execute 'syntax match ArcanaPathModifier /' . pathModPat . '/ contained contains=@ArcanaPathModifierMembers'
+
+" KEYWORD: Filename
+
+let filenameKeywordPat = 'filename'
+
+execute 'syntax match ArcanaFilenameKeyword /' . filenameKeywordPat . '/ contained'
+highlight default link ArcanaFilenameKeyword ArcanaKeyword
+
+" MODIFIER: Filename
+
+syntax cluster ArcanaFilenameModifierMembers contains=ArcanaModifier
+syntax cluster ArcanaFilenameModifierMembers add=ArcanaFilenameKeyword
+
+let filenameModPat = modPat . filenameKeywordPat
+
+execute 'syntax match ArcanaFilenameModifier /' . filenameModPat . '/ contained contains=@ArcanaFilenameModifierMembers'
+
+" KEYWORD: Trim
+
+let trimKeywordPat = 'trim'
+
+execute 'syntax match ArcanaTrimKeyword /' . trimKeywordPat . '/ contained'
+highlight default link ArcanaTrimKeyword ArcanaKeyword
+
+" MODIFIER: Trim
+
+syntax cluster ArcanaTrimModifierMembers contains=ArcanaModifier
+syntax cluster ArcanaTrimModifierMembers add=ArcanaTrimKeyword
+
+let trimModPat = modPat . trimKeywordPat
+
+execute 'syntax match ArcanaTrimModifier /' . trimModPat . '/ contained contains=@ArcanaTrimModifierMembers'
+
+" KEYWORD: Json
+
+let jsonKeywordPat = 'json'
+
+execute 'syntax match ArcanaJsonKeyword /' . jsonKeywordPat . '/ contained'
+highlight default link ArcanaJsonKeyword ArcanaKeyword
+
+" MODIFIER: Json
+
+syntax cluster ArcanaJsonModifierMembers contains=ArcanaModifier
+syntax cluster ArcanaJsonModifierMembers add=ArcanaJsonKeyword
+
+let jsonModPat = modPat . jsonKeywordPat
+
+execute 'syntax match ArcanaJsonModifier /' . jsonModPat . '/ contained contains=@ArcanaJsonModifierMembers'
+
+" KEYWORD: Replace
+
+let replaceKeywordPat = 'replace'
+
+execute 'syntax match ArcanaReplaceKeyword /' . replaceKeywordPat . '/ contained'
+highlight default link ArcanaReplaceKeyword ArcanaKeyword
+
+" MODIFIER: Replace
+
+syntax cluster ArcanaReplaceModifierMembers contains=ArcanaPath
+syntax cluster ArcanaReplaceModifierMembers add=ArcanaModifier
+syntax cluster ArcanaReplaceModifierMembers add=ArcanaReplaceKeyword
+
+let replaceModPat = modPat . replaceKeywordPat . '\s*' . pathPat . '\s*' . pathPat
+
+execute 'syntax match ArcanaReplaceModifier /' . replaceModPat . '/ contained contains=@ArcanaReplaceModifierMembers'
+
+" KEYWORD: Split
+
+let splitKeywordPat = 'split'
+
+execute 'syntax match ArcanaSplitKeyword /' . splitKeywordPat . '/ contained'
+highlight default link ArcanaSplitKeyword ArcanaKeyword
+
+" TYPE: Number
+
+let numPat = '[0-9]\+'
+
+execute 'syntax match ArcanaNumber /' . numPat . '/ contained'
+highlight default link ArcanaNumber Title
+
+" MODIFIER: Split
+
+syntax cluster ArcanaSplitModifierMembers contains=ArcanaModifier
+syntax cluster ArcanaSplitModifierMembers add=ArcanaSplitKeyword
+syntax cluster ArcanaSplitModifierMembers add=ArcanaNumber
+
+let splitModPat = modPat . splitKeywordPat . '\s*' . numPat . '\s*' . numPat
+
+execute 'syntax match ArcanaSplitModifier /' . splitModPat . '/ contained contains=@ArcanaSplitModifierMembers'
+
+" TAG: Include-Content
+
+syntax cluster ArcanaIncludeContentTagMembers contains=@ArcanaAliasLikeMembers
+syntax cluster ArcanaIncludeContentTagMembers add=ArcanaNullableCondition
+syntax cluster ArcanaIncludeContentTagMembers add=ArcanaLowerModifier
+syntax cluster ArcanaIncludeContentTagMembers add=ArcanaUpperModifier
+syntax cluster ArcanaIncludeContentTagMembers add=ArcanaPathModifier
+syntax cluster ArcanaIncludeContentTagMembers add=ArcanaReplaceModifier
+syntax cluster ArcanaIncludeContentTagMembers add=ArcanaFilenameModifier
+syntax cluster ArcanaIncludeContentTagMembers add=ArcanaTrimModifier
+syntax cluster ArcanaIncludeContentTagMembers add=ArcanaSplitModifier
+syntax cluster ArcanaIncludeContentTagMembers add=ArcanaJsonModifier
+
+let includeContentModsPat =
+			\ '\%(' .
+				\ lowerModPat . '\|' . upperModPat . '\|' . pathModPat . '\|' .
+				\ filenameModPat . '\|' . trimModPat . '\|' .
+				\ splitModPat . '\|' . replaceModPat . '\|' . jsonModPat .
+			\ '\)\{0,1\}'
+
+let includeContentTagPat = tagEscapePat . '\$' . tagStartPat .
+			\ aliasLikePat . nullableConditionPat . '\{0,1\}' .
+			\ includeContentModsPat .
+			\ includeContentModsPat .
+			\ includeContentModsPat .
+			\ includeContentModsPat .
+			\ includeContentModsPat .
+			\ includeContentModsPat .
+			\ includeContentModsPat .
+			\ includeContentModsPat .
+			\ tagEndPat
+
+execute 'syntax match ArcanaIncludeContentTag /' . includeContentTagPat . '/ contains=@ArcanaIncludeContentTagMembers'
+highlight default link ArcanaIncludeContentTag ArcanaTag
+
+" TAG: Unset-Item
+
+syntax cluster ArcanaUnsetItemTagMembers contains=@ArcanaAliasLikeMembers
+
+let unsetItemTagPat = tagEscapePat . '\/' . tagStartPat . aliasLikePat . tagEndPat
+
+execute 'syntax match ArcanaUnsetItemTag /' . unsetItemTagPat . '/ contains=@ArcanaUnsetItemTagMembers'
+highlight default link ArcanaUnsetItemTag ArcanaTag
+
+syntax cluster ArcanaJsonTypesMembers contains=ArcanaJsonString
+syntax cluster ArcanaJsonTypesMembers add=ArcanaJsonNumber
+syntax cluster ArcanaJsonTypesMembers add=ArcanaJsonBoolean
+syntax cluster ArcanaJsonTypesMembers add=ArcanaJsonNull
+syntax cluster ArcanaJsonTypesMembers add=ArcanaJsonObject
+syntax cluster ArcanaJsonTypesMembers add=ArcanaJsonArray
+syntax cluster ArcanaJsonTypesMembers add=@ArcanaBlockMembers
+
+" TYPE: Json Key
+
+execute 'syntax match ArcanaJsonKey /' . pathPat . '/ contained'
+highlight default link ArcanaJsonKey ArcanaAlias
+
+execute 'syntax match ArcanaJsonKeyDlim /' . pathPat . ':\s*/ contains=ArcanaJsonKey '
+			\ 'contained nextgroup=@ArcanaJsonTypesMembers'
+highlight default link ArcanaJsonKeyDlim ArcanaTag
+
+" TYPE: Json Comma
+
+syntax match ArcanaJsonComma /,/ contained nextgroup=@ArcanaJsonTypesMembers
+highlight default link ArcanaJsonComma ArcanaTag
+
+" TYPE: Json String
+
+execute 'syntax match ArcanaJsonString /' . pathPat . '/ contained ' .
+			\ 'nextgroup=ArcanaJsonComma ' .
+			\ 'contains=@ArcanaBlockMembers'
+highlight default link ArcanaJsonString ArcanaPath
+
+" TYPE: Json Number
+syntax match ArcanaJsonNumber /[0-9.]\+/ contained nextgroup=ArcanaJsonComma
+highlight default link ArcanaJsonNumber ArcanaNumber
+
+" TYPE: Json Boolean
+syntax match ArcanaJsonBoolean /true\|false/ contained nextgroup=ArcanaJsonComma
+highlight default link ArcanaJsonBoolean ArcanaCondition
+
+" TYPE: Json Null
+syntax match ArcanaJsonNull /null/ contained nextgroup=ArcanaJsonComma
+highlight default link ArcanaJsonNull ArcanaComment
+
+" REGION: Json Object
+
+syntax region ArcanaJsonObject start=/{/ end=/}/ contained nextgroup=ArcanaJsonComma
+			\ contains=ArcanaJsonKeyDlim,@ArcanaBlockMembers
+highlight default link ArcanaJsonObject Statement
+
+" REGION: Json Array
+
+syntax region ArcanaJsonArray start=/\[/ end=/\]/ contained nextgroup=ArcanaJsonComma
+			\ contains=@ArcanaJsonTypesMembers
+highlight default link ArcanaJsonArray Conditional
+
+syntax cluster ArcanaNextJsonBlockMembers contains=ArcanaJsonBlock
+syntax cluster ArcanaNextJsonBlockMembers add=ArcanaJsonChain
+
+" ILLEGAL: Anything in chain before {
+
+syntax match ArcanaIllegalInJsonChain /[^{\s\t-]/ contained
+highlight default link ArcanaIllegalInJsonChain ArcanaIllegal
+
+" REGION: Json Chain
+
+syntax region ArcanaJsonChain start=/-/ end=/(/me=e-1 contained
+			\ nextgroup=ArcanaJsonBlock contains=ArcanaIllegalInJsonChain
+highlight default link ArcanaJsonChain ArcanaTag
+
+" REGION: Json Block
+
+syntax region ArcanaJsonBlock matchgroup=ArcanaTag start=/(/ end=/)/
+			\ contained contains=@ArcanaJsonTypesMembers
+
+" TAG: Set-Item
+
+syntax cluster ArcanaSetItemTagMembers contains=@ArcanaAliasLikeMembers
+
+let setItemTagPat = tagEscapePat . '=' . tagStartPat . '\%(' . aliasLikePat . '\)\{0,1\}' . tagEndPat
+
+execute 'syntax match ArcanaSetItemTag /' . setItemTagPat . '/ '
+			\ 'contains=@ArcanaSetItemTagMembers '
+			\ 'nextgroup=ArcanaJsonBlock,ArcanaJsonChain'
+highlight default link ArcanaSetItemTag ArcanaTag
+
+syntax sync fromstart
