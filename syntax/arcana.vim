@@ -38,6 +38,9 @@ syntax cluster ArcanaBlockMembers add=ArcanaForEachItemTag
 syntax cluster ArcanaBlockMembers add=ArcanaIncludeContentTag
 syntax cluster ArcanaBlockMembers add=ArcanaUnsetItemTag
 syntax cluster ArcanaBlockMembers add=ArcanaSetItemTag
+syntax cluster ArcanaBlockMembers add=ArcanaWriteContentTag
+syntax cluster ArcanaBlockMembers add=ArcanaCopyPathTag
+syntax cluster ArcanaBlockMembers add=ArcanaDeletePathTag
 
 syntax cluster ArcanaNextBlockMembers contains=ArcanaBlock
 syntax cluster ArcanaNextBlockMembers add=ArcanaChain
@@ -337,6 +340,27 @@ execute 'syntax match ArcanaIncludeFileTag /' . includeFileTagPat . '/ ' .
 			\ 'nextgroup=@ArcanaNextBlockMembers'
 highlight default link ArcanaIncludeFileTag ArcanaTag
 
+" TAG: Copy Path
+
+let copyPathTagPat = tagEscapePat . '\~' . tagStartPat . tagEndPat
+execute 'syntax match ArcanaCopyPathTag /' . copyPathTagPat . '/ ' .
+			\ 'nextgroup=@ArcanaNextBlockMembers'
+highlight default link ArcanaCopyPathTag ArcanaTag
+
+" TAG: Delete Path
+
+let deletePathTagPat = tagEscapePat . '-' . tagStartPat . tagEndPat
+execute 'syntax match ArcanaDeletePathTag /' . deletePathTagPat . '/ ' .
+			\ 'nextgroup=@ArcanaNextBlockMembers'
+highlight default link ArcanaDeletePathTag ArcanaTag
+
+" TAG: Write Content
+
+let writeContentTagPat = tagEscapePat . '\^' . tagStartPat . tagEndPat
+execute 'syntax match ArcanaWriteContentTag /' . writeContentTagPat . '/ ' .
+			\ 'nextgroup=@ArcanaNextBlockMembers'
+highlight default link ArcanaWriteContentTag ArcanaTag
+
 " KEYWORD: Ext
 
 let extKeywordPat = 'ext'
@@ -608,7 +632,7 @@ let includeContentTagPat = tagEscapePat . '\$' . tagStartPat .
 execute 'syntax match ArcanaIncludeContentTag /' . includeContentTagPat . '/ contains=@ArcanaIncludeContentTagMembers'
 highlight default link ArcanaIncludeContentTag ArcanaTag
 
-" TAG: Unset-Item
+" TAG: Unset Item
 
 syntax cluster ArcanaUnsetItemTagMembers contains=@ArcanaAliasLikeMembers
 
