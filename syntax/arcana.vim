@@ -29,6 +29,7 @@ highlight default link ArcanaComment Comment
 
 syntax cluster ArcanaBlockMembers contains=ArcanaIgnore
 syntax cluster ArcanaBlockMembers add=ArcanaComment
+syntax cluster ArcanaBlockMembers add=ArcanaTrim
 syntax cluster ArcanaBlockMembers add=ArcanaExtendsTag
 syntax cluster ArcanaBlockMembers add=ArcanaIfTag
 syntax cluster ArcanaBlockMembers add=ArcanaSourceTag
@@ -42,21 +43,13 @@ syntax cluster ArcanaBlockMembers add=ArcanaWriteContentTag
 syntax cluster ArcanaBlockMembers add=ArcanaCopyPathTag
 syntax cluster ArcanaBlockMembers add=ArcanaDeletePathTag
 
-syntax cluster ArcanaNextBlockMembers contains=ArcanaBlock
-syntax cluster ArcanaNextBlockMembers add=ArcanaChain
-
 syntax region ArcanaBlock matchgroup=ArcanaTag start=/\%(\\\)\@<!(/ end=/\%(\\\)\@<!)/
-			\ contained nextgroup=@ArcanaNextBlockMembers contains=@ArcanaBlockMembers
+			\ contained nextgroup=ArcanaBlock contains=@ArcanaBlockMembers
 
-" ILLEGAL: Anything in chain before {
+" TYPE: Trim
 
-syntax match ArcanaIllegalInChain /[^{\s\t-]/ contained
-highlight default link ArcanaIllegalInChain ArcanaIllegal
-
-" REGION: Chain
-
-syntax region ArcanaChain start=/-/ end=/(/me=e-1 contained nextgroup=ArcanaBlock contains=ArcanaIllegalInChain
-highlight default link ArcanaChain ArcanaTag
+syntax region ArcanaTrim start=/\\/ end=/[^\s\t]/me=e-1 nextgroup=ArcanaBlock
+highlight default link ArcanaTrim ArcanaTag
 
 " TYPE: Alias
 
@@ -251,7 +244,7 @@ let ifTagMultiPat = ifTagSinglePat . '\s*' .
 
 let ifTagPat = tagEscapePat . '%' . tagStartPat . ifTagMultiPat . tagEndPat
 
-execute 'syntax match ArcanaIfTag /' . ifTagPat . '/ contains=@ArcanaIfTagMembers nextgroup=@ArcanaNextBlockMembers'
+execute 'syntax match ArcanaIfTag /' . ifTagPat . '/ contains=@ArcanaIfTagMembers nextgroup=ArcanaBlock'
 highlight default link ArcanaIfTag ArcanaTag
 
 " TYPE: Modifier
@@ -337,28 +330,28 @@ let includeFileTagPat = tagEscapePat . '&' . tagStartPat .
 
 execute 'syntax match ArcanaIncludeFileTag /' . includeFileTagPat . '/ ' .
 			\ 'contains=@ArcanaIncludeFileTagMembers ' .
-			\ 'nextgroup=@ArcanaNextBlockMembers'
+			\ 'nextgroup=ArcanaBlock'
 highlight default link ArcanaIncludeFileTag ArcanaTag
 
 " TAG: Copy Path
 
 let copyPathTagPat = tagEscapePat . '\~' . tagStartPat . tagEndPat
 execute 'syntax match ArcanaCopyPathTag /' . copyPathTagPat . '/ ' .
-			\ 'nextgroup=@ArcanaNextBlockMembers'
+			\ 'nextgroup=ArcanaBlock'
 highlight default link ArcanaCopyPathTag ArcanaTag
 
 " TAG: Delete Path
 
 let deletePathTagPat = tagEscapePat . '-' . tagStartPat . tagEndPat
 execute 'syntax match ArcanaDeletePathTag /' . deletePathTagPat . '/ ' .
-			\ 'nextgroup=@ArcanaNextBlockMembers'
+			\ 'nextgroup=ArcanaBlock'
 highlight default link ArcanaDeletePathTag ArcanaTag
 
 " TAG: Write Content
 
 let writeContentTagPat = tagEscapePat . '\^' . tagStartPat . tagEndPat
 execute 'syntax match ArcanaWriteContentTag /' . writeContentTagPat . '/ ' .
-			\ 'nextgroup=@ArcanaNextBlockMembers'
+			\ 'nextgroup=ArcanaBlock'
 highlight default link ArcanaWriteContentTag ArcanaTag
 
 " KEYWORD: Ext
@@ -419,7 +412,7 @@ let forEachFileTagPat = tagEscapePat . '\*' . tagStartPat .
 
 execute 'syntax match ArcanaForEachFileTag /' . forEachFileTagPat . '/ '
 			\ 'contains=ArcanaInStatement,@ArcanaPathLikeMembers,ArcanaExtModifier,ArcanaReverseModifier ' .
-			\ 'nextgroup=@ArcanaNextBlockMembers'
+			\ 'nextgroup=ArcanaBlock'
 highlight default link ArcanaForEachFileTag ArcanaTag
 
 " KEYWORD: Paths
@@ -457,7 +450,7 @@ let forEachItemTagPat = tagEscapePat . '@' . tagStartPat .
 
 execute 'syntax match ArcanaForEachItemTag /' . forEachItemTagPat . '/ '
 			\ 'contains=ArcanaInStatement,ArcanaAlias,ArcanaNullableCondition,ArcanaPathsModifier,ArcanaReverseModifier ' .
-			\ 'nextgroup=@ArcanaNextBlockMembers'
+			\ 'nextgroup=ArcanaBlock'
 highlight default link ArcanaForEachItemTag ArcanaTag
 
 " KEYWORD: Lower
@@ -695,18 +688,6 @@ syntax region ArcanaJsonArray start=/\[/ end=/\]/ contained nextgroup=ArcanaJson
 highlight default link ArcanaJsonArray Conditional
 
 syntax cluster ArcanaNextJsonBlockMembers contains=ArcanaJsonBlock
-syntax cluster ArcanaNextJsonBlockMembers add=ArcanaJsonChain
-
-" ILLEGAL: Anything in chain before {
-
-syntax match ArcanaIllegalInJsonChain /[^{\s\t-]/ contained
-highlight default link ArcanaIllegalInJsonChain ArcanaIllegal
-
-" REGION: Json Chain
-
-syntax region ArcanaJsonChain start=/-/ end=/(/me=e-1 contained
-			\ nextgroup=ArcanaJsonBlock contains=ArcanaIllegalInJsonChain
-highlight default link ArcanaJsonChain ArcanaTag
 
 " REGION: Json Block
 
@@ -721,7 +702,7 @@ let setItemTagPat = tagEscapePat . '=' . tagStartPat . '\%(' . aliasLikePat . '\
 
 execute 'syntax match ArcanaSetItemTag /' . setItemTagPat . '/ '
 			\ 'contains=@ArcanaSetItemTagMembers '
-			\ 'nextgroup=ArcanaJsonBlock,ArcanaJsonChain'
+			\ 'nextgroup=ArcanaJsonBlock'
 highlight default link ArcanaSetItemTag ArcanaTag
 
 syntax sync fromstart
