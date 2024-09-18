@@ -387,6 +387,38 @@ let reverseModPat = modPat . reverseKeywordPat
 
 execute 'syntax match ArcanaReverseModifier /' . reverseModPat . '/ contained contains=@ArcanaReverseModifierMembers'
 
+" KEYWORD: Files
+
+let filesKeywordPat = 'files'
+
+execute 'syntax match ArcanaFilesKeyword /' . filesKeywordPat . '/ contained'
+highlight default link ArcanaFilesKeyword ArcanaKeyword
+
+" MODIFIER: Files
+
+syntax cluster ArcanaFilesModifierMembers contains=ArcanaModifier
+syntax cluster ArcanaFilesModifierMembers add=ArcanaFilesKeyword
+
+let filesModPat = modPat . filesKeywordPat
+
+execute 'syntax match ArcanaFilesModifier /' . filesModPat . '/ contained contains=@ArcanaFilesModifierMembers'
+
+" KEYWORD: Dirs
+
+let dirsKeywordPat = 'dirs'
+
+execute 'syntax match ArcanaDirsKeyword /' . dirsKeywordPat . '/ contained'
+highlight default link ArcanaDirsKeyword ArcanaKeyword
+
+" MODIFIER: Dirs
+
+syntax cluster ArcanaDirsModifierMembers contains=ArcanaModifier
+syntax cluster ArcanaDirsModifierMembers add=ArcanaDirsKeyword
+
+let dirsModPat = modPat . dirsKeywordPat
+
+execute 'syntax match ArcanaDirsModifier /' . dirsModPat . '/ contained contains=@ArcanaDirsModifierMembers'
+
 " KEYWORD: In
 
 let inKeywordPat = "in"
@@ -402,16 +434,18 @@ execute 'syntax match ArcanaInStatement /' . inStatementStartPat . '/ contained 
 
 " TAG: For-Each File
 
-let forEachFileTagModsPat = '\%(' . extModPat . '\|' . reverseModPat . '\)\{0,1\}'
+let forEachFileTagModsPat = '\%(' . extModPat . '\|' . reverseModPat . '\|' . dirsModPat . '\|' . filesModPat . '\)\{0,1\}'
 
 let forEachFileTagPat = tagEscapePat . '\*' . tagStartPat .
 			\ inStatementStartPat . pathLikePat .
 			\ forEachFileTagModsPat .
 			\ forEachFileTagModsPat .
+			\ forEachFileTagModsPat .
+			\ forEachFileTagModsPat .
 			\ tagEndPat
 
 execute 'syntax match ArcanaForEachFileTag /' . forEachFileTagPat . '/ '
-			\ 'contains=ArcanaInStatement,@ArcanaPathLikeMembers,ArcanaExtModifier,ArcanaReverseModifier ' .
+			\ 'contains=ArcanaInStatement,@ArcanaPathLikeMembers,ArcanaExtModifier,ArcanaReverseModifier,ArcanaFilesModifier,ArcanaDirsModifier ' .
 			\ 'nextgroup=ArcanaBlock'
 highlight default link ArcanaForEachFileTag ArcanaTag
 
