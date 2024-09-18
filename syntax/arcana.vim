@@ -70,9 +70,37 @@ highlight default link ArcanaContentKeyword ArcanaKeyword
 
 " IMPORTANT: The \%(...\) grouping excludes the result from the captured groups,
 " allowing for more than 10.
-let loopWithPropertyKeywordPat = '$loop\.\%(index\|position\|length\|max\|first\|last\)'
-let loopNoPropertyKeywordPat = '$loop'
-let loopKeywordPat = '\%(' . loopWithPropertyKeywordPat . '\|' . loopNoPropertyKeywordPat . '\)'
+let loopPat = '\$loop'
+let loopIndexKeywordPat = loopPat . '\.index'
+let loopPositionKeywordPat = loopPat . '\.position'
+let loopLengthKeywordPat = loopPat . '\.length'
+let loopMaxKeywordPat = loopPat . '\.max'
+let loopFirstKeywordPat = loopPat . '\.first'
+let loopLastKeywordPat = loopPat . '\.last'
+let loopEntryKeywordPat = loopPat . '\.entry'
+let loopEntryPathKeywordPat = loopEntryKeywordPat . '\.path'
+let loopEntryExtKeywordPat = loopEntryKeywordPat . '\.ext'
+let loopEntryStemKeywordPat = loopEntryKeywordPat . '\.stem'
+let loopEntryNameKeywordPat = loopEntryKeywordPat . '\.name'
+let loopEntryIsFileKeywordPat = loopEntryKeywordPat . '\.is_file'
+let loopEntryIsDirKeywordPat = loopEntryKeywordPat . '\.is_dir'
+
+let loopKeywordPat = '\%(' .
+			\ loopEntryIsDirKeywordPat . '\|' .
+			\ loopEntryIsFileKeywordPat . '\|' .
+			\ loopEntryNameKeywordPat . '\|' .
+			\ loopEntryStemKeywordPat . '\|' .
+			\ loopEntryExtKeywordPat . '\|' .
+			\ loopEntryPathKeywordPat . '\|' .
+			\ loopEntryKeywordPat . '\|' .
+			\ loopLastKeywordPat . '\|' .
+			\ loopFirstKeywordPat . '\|' .
+			\ loopMaxKeywordPat . '\|' .
+			\ loopLengthKeywordPat . '\|' .
+			\ loopPositionKeywordPat . '\|' .
+			\ loopIndexKeywordPat . '\|' .
+			\ loopPat .
+			\ '\)'
 
 execute 'syntax match ArcanaLoopKeyword /' . loopKeywordPat . '/ contained'
 highlight default link ArcanaLoopKeyword ArcanaKeyword
