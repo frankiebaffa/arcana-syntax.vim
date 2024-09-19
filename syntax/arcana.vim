@@ -263,10 +263,12 @@ let ifTagSinglePat = '\%(' . ifTagConditionalContentPat . '\|' . ifTagTruthyCont
 
 let ifTagMultiPat = ifTagSinglePat . '\s*' .
 			\ '\%(' .
+				\ '\s*' .
 				\ '\%(' .
 					\ andConditionPat . '\|' .
 					\ orConditionPat .
-				\ '\)\s*' .
+				\ '\)' .
+				\ '\s*' .
 				\ ifTagSinglePat .
 			\ '\)*'
 
